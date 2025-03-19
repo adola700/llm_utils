@@ -1,7 +1,11 @@
 ################ Imports ################
+
+# pip install transformers==4.45 accelerate hf_transfer datasets pandas 
+# pip install flash-attn --no-build-isolation
+
 import os
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorWithPadding
 from datasets import Dataset
@@ -94,7 +98,7 @@ training_args = TrainingArguments(
     warmup_ratio = 0.1,
     lr_scheduler_type = "cosine",
 )
-
+do_padding = True if training_args.per_device_train_batch_size > 1 else False
 # Define the Trainer
 trainer = Trainer(
     model=model,
@@ -102,7 +106,7 @@ trainer = Trainer(
     train_dataset=tokenized_train_dataset,
     eval_dataset=tokenized_val_dataset,
     tokenizer=tokenizer,
-    data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer),
+    data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, padding = do_padding), # Add padding = True if BS > 1
 )
 # trainer.model.print_trainable_parameters()
 trainer.accelerator.print(f"{trainer.model}")
